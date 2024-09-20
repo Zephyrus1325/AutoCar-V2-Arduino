@@ -21,7 +21,7 @@
 
 // Set the Max size of the Serial Buffer or the amount of data you want to send+2
 // You need to add 2 to allow the prefix and suffix character space to send.
-#define MAX_SIZE 170
+#define MAX_SIZE 220
 
 
 class StreamSend {

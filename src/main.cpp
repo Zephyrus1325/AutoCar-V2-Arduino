@@ -9,6 +9,7 @@ SensorHandler sensors;
 Motor left(PIN_MOTOR_LEFT_DIRA, PIN_MOTOR_LEFT_DIRB, PIN_MOTOR_LEFT_PWM, PIN_MOTOR_LEFT_ENCODER);
 Motor right(PIN_MOTOR_RIGHT_DIRA, PIN_MOTOR_RIGHT_DIRB, PIN_MOTOR_RIGHT_PWM, PIN_MOTOR_RIGHT_ENCODER);
 CarData carData;
+Command command;
 const long ultrassoundUpdateTime = 100;
 
 void updateCarData(){
@@ -23,15 +24,15 @@ void updateCarData(){
     carData.ultrassound_reading_back = sensors.getUltrassoundDistance(6) * FLOAT_MULTIPLIER;
     carData.ultrassound_reading_back_right = sensors.getUltrassoundDistance(7) * FLOAT_MULTIPLIER;
     carData.motor_mode = 0;
-    carData.motor_left_setpoint = 10;
-    carData.motor_left_speed = 15;
-    carData.motor_left_throttle = 230;
+    //carData.motor_left_setpoint = 0;
+    //carData.motor_left_speed = 0;
+    //carData.motor_left_throttle = 0;
     carData.motor_left_kp = 1.1;
     carData.motor_left_ki = 1.2;
     carData.motor_left_kd = 1.3;
-    carData.motor_right_setpoint = 6;
-    carData.motor_right_speed = 9;
-    carData.motor_right_throttle = 69;
+    //carData.motor_right_setpoint = 0;
+    //carData.motor_right_speed = 0;
+    //carData.motor_right_throttle = 0;
     carData.motor_right_kp = 2.1;
     carData.motor_right_ki = 2.2;
     carData.motor_right_kd = 2.3;
@@ -80,8 +81,16 @@ void setup() {
     sensors.addUltrassound(PIN_ULTRASSOUND_BACK_TRIGGER, PIN_ULTRASSOUND_BACK_ECHO, ultrassoundUpdateTime);
     sensors.addUltrassound(PIN_ULTRASSOUND_BACK_RIGHT_TRIGGER, PIN_ULTRASSOUND_BACK_RIGHT_ECHO, ultrassoundUpdateTime);
     
-    left.begin();
-    right.begin();
+    //left.begin();
+    //right.begin();
+    pinMode(PIN_MOTOR_LEFT_DIRA, OUTPUT);
+    pinMode(PIN_MOTOR_LEFT_DIRB, OUTPUT);
+    pinMode(PIN_MOTOR_LEFT_PWM, OUTPUT);
+    pinMode(PIN_MOTOR_LEFT_ENCODER, INPUT);
+    pinMode(PIN_MOTOR_RIGHT_DIRA, OUTPUT);
+    pinMode(PIN_MOTOR_RIGHT_DIRB, OUTPUT);
+    pinMode(PIN_MOTOR_RIGHT_PWM, OUTPUT);
+    pinMode(PIN_MOTOR_RIGHT_ENCODER, INPUT);
     Serial.begin(115200);
     Serial2.begin(115200);
 }
@@ -89,19 +98,37 @@ void loop() {
     sensors.update();
     updateCarData();
     sendData(&carData);
-    Serial.print(sensors.getUltrassoundDistance(0));
-    Serial.print("|");
-    Serial.print(sensors.getUltrassoundDistance(1));
-    Serial.print("|");
-    Serial.print(sensors.getUltrassoundDistance(2));
-    Serial.print("|");
-    Serial.print(sensors.getUltrassoundDistance(3));
-    Serial.print("|");
-    Serial.print(sensors.getUltrassoundDistance(4));
-    Serial.print("|");
-    Serial.print(sensors.getUltrassoundDistance(5));
-    Serial.print("|");
-    Serial.print(sensors.getUltrassoundDistance(6));
-    Serial.print("|");
-    Serial.println(sensors.getUltrassoundDistance(7));
+    // Se um comando foi recebido
+    if(receiveData(&command) == GOOD_PACKET){
+        
+        switch(command.index){
+            // Invalid case
+            case 0:
+                break;
+            case COMMAND_MOTOR_LEFT_SETSPEED:
+                carData.motor_left_setpoint = (float)(command.value) / FLOAT_MULTIPLIER;
+                break;
+            case COMMAND_MOTOR_LEFT_SETTHROTTLE:
+                carData.motor_left_throttle = command.value;
+                break;
+            case COMMAND_MOTOR_RIGHT_SETSPEED:
+                carData.motor_right_setpoint = (float)(command.value) / FLOAT_MULTIPLIER;
+                break;
+            case COMMAND_MOTOR_RIGHT_SETTHROTTLE:
+                carData.motor_right_throttle = command.value;
+                break;
+            case COMMAND_MOTOR_SETMOTORMODE:
+                carData.motor_mode = command.value;
+                break;
+            
+            default:
+                break;
+        }
+    }
+    digitalWrite(PIN_MOTOR_LEFT_DIRA, HIGH);
+    digitalWrite(PIN_MOTOR_LEFT_DIRB, LOW);
+    digitalWrite(PIN_MOTOR_RIGHT_DIRA, LOW);
+    digitalWrite(PIN_MOTOR_RIGHT_DIRB, HIGH);
+    analogWrite(PIN_MOTOR_LEFT_PWM, carData.motor_left_throttle);
+    analogWrite(PIN_MOTOR_RIGHT_PWM, carData.motor_right_throttle);
 }
