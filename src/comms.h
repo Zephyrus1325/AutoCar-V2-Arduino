@@ -59,6 +59,9 @@ struct CarData{
     int16_t navigation_home_x;
     int16_t navigation_home_y;
     int16_t navigation_home_z;
+    int64_t padding1;
+    int32_t padding2;
+    int8_t padding3;
 };
 
 // Timer responsável por enviar os dados a cada 100 milisegundos (10Hz)
@@ -67,7 +70,22 @@ timer sendTimer{0, 100, true, true, true};
 // Envia os dados a cada tempo, definido pelo sendTimer
 void sendData(CarData* data){
     if(sendTimer.CheckTime()){
-        StreamSend::sendObject(Serial2, &data, sizeof(*data));
+        StreamSend::sendObject(Serial2, data, sizeof(*data));
+        //Serial.print(data->ultrassound_reading_front);
+        //Serial.print("|");
+        //Serial.print(data->ultrassound_reading_front_left);
+        //Serial.print("|");
+        //Serial.print(data->ultrassound_reading_front_right);
+        //Serial.print("|");
+        //Serial.print(data->ultrassound_reading_left);
+        //Serial.print("|");
+        //Serial.print(data->ultrassound_reading_right);
+        //Serial.print("|");
+        //Serial.print(data->ultrassound_reading_back);
+        //Serial.print("|");
+        //Serial.print(data->ultrassound_reading_back_left);
+        //Serial.print("|");
+        //Serial.println(data->ultrassound_reading_back_right);
     }
     
 }

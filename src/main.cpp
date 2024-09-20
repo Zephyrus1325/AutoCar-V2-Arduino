@@ -9,20 +9,19 @@ SensorHandler sensors;
 Motor left(PIN_MOTOR_LEFT_DIRA, PIN_MOTOR_LEFT_DIRB, PIN_MOTOR_LEFT_PWM, PIN_MOTOR_LEFT_ENCODER);
 Motor right(PIN_MOTOR_RIGHT_DIRA, PIN_MOTOR_RIGHT_DIRB, PIN_MOTOR_RIGHT_PWM, PIN_MOTOR_RIGHT_ENCODER);
 CarData carData;
-
 const long ultrassoundUpdateTime = 100;
 
 void updateCarData(){
-    carData.battery_voltage = 11.1f;
+    carData.battery_voltage = 11.1f * FLOAT_MULTIPLIER;
     carData.battery_percentage = carData.battery_voltage * 100 / MAX_BATTERY_VOLTAGE;
-    carData.ultrassound_reading_front = sensors.getUltrassoundDistance(0);
-    carData.ultrassound_reading_front_left = sensors.getUltrassoundDistance(1);
-    carData.ultrassound_reading_front_right = sensors.getUltrassoundDistance(2);
-    carData.ultrassound_reading_left = sensors.getUltrassoundDistance(3);
-    carData.ultrassound_reading_right = sensors.getUltrassoundDistance(4);
-    carData.ultrassound_reading_back_left = sensors.getUltrassoundDistance(5);
-    carData.ultrassound_reading_back = sensors.getUltrassoundDistance(6);
-    carData.ultrassound_reading_back_right = sensors.getUltrassoundDistance(7);
+    carData.ultrassound_reading_front = sensors.getUltrassoundDistance(0) * FLOAT_MULTIPLIER;
+    carData.ultrassound_reading_front_left = sensors.getUltrassoundDistance(1) * FLOAT_MULTIPLIER;
+    carData.ultrassound_reading_front_right = sensors.getUltrassoundDistance(2) * FLOAT_MULTIPLIER;
+    carData.ultrassound_reading_left = sensors.getUltrassoundDistance(3) * FLOAT_MULTIPLIER;
+    carData.ultrassound_reading_right = sensors.getUltrassoundDistance(4) * FLOAT_MULTIPLIER;
+    carData.ultrassound_reading_back_left = sensors.getUltrassoundDistance(5) * FLOAT_MULTIPLIER;
+    carData.ultrassound_reading_back = sensors.getUltrassoundDistance(6) * FLOAT_MULTIPLIER;
+    carData.ultrassound_reading_back_right = sensors.getUltrassoundDistance(7) * FLOAT_MULTIPLIER;
     carData.motor_mode = 0;
     carData.motor_left_setpoint = 10;
     carData.motor_left_speed = 15;
@@ -70,6 +69,7 @@ void updateCarData(){
 }
 
 
+
 void setup() {
     sensors.addUltrassound(PIN_ULTRASSOUND_FRONT_TRIGGER, PIN_ULTRASSOUND_FRONT_ECHO, ultrassoundUpdateTime);
     sensors.addUltrassound(PIN_ULTRASSOUND_FRONT_LEFT_TRIGGER, PIN_ULTRASSOUND_FRONT_LEFT_ECHO, ultrassoundUpdateTime);
@@ -79,6 +79,7 @@ void setup() {
     sensors.addUltrassound(PIN_ULTRASSOUND_BACK_LEFT_TRIGGER, PIN_ULTRASSOUND_BACK_LEFT_ECHO, ultrassoundUpdateTime);
     sensors.addUltrassound(PIN_ULTRASSOUND_BACK_TRIGGER, PIN_ULTRASSOUND_BACK_ECHO, ultrassoundUpdateTime);
     sensors.addUltrassound(PIN_ULTRASSOUND_BACK_RIGHT_TRIGGER, PIN_ULTRASSOUND_BACK_RIGHT_ECHO, ultrassoundUpdateTime);
+    
     left.begin();
     right.begin();
     Serial.begin(115200);
@@ -88,4 +89,19 @@ void loop() {
     sensors.update();
     updateCarData();
     sendData(&carData);
+    Serial.print(sensors.getUltrassoundDistance(0));
+    Serial.print("|");
+    Serial.print(sensors.getUltrassoundDistance(1));
+    Serial.print("|");
+    Serial.print(sensors.getUltrassoundDistance(2));
+    Serial.print("|");
+    Serial.print(sensors.getUltrassoundDistance(3));
+    Serial.print("|");
+    Serial.print(sensors.getUltrassoundDistance(4));
+    Serial.print("|");
+    Serial.print(sensors.getUltrassoundDistance(5));
+    Serial.print("|");
+    Serial.print(sensors.getUltrassoundDistance(6));
+    Serial.print("|");
+    Serial.println(sensors.getUltrassoundDistance(7));
 }

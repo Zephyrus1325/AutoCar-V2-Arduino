@@ -25,8 +25,8 @@ class Ultrassound : public Sensor {
     float distance;                     // Distancia lida pelo Sensor Ultrassonico em cm
     unsigned int triggerPin;      // Pino Trigger do Sensor
     unsigned int echoPin;         // Pino Echo do Sensor
-    unsigned long maxTime = 2000;       // Tempo máximo que vai se esperar pelo echo do sensor em microssegundos
-    timer updateTimer = {0, 1000, true, true, true};
+    unsigned long maxTime = 5882;       // Tempo máximo que vai se esperar pelo echo do sensor em microssegundos
+    timer updateTimer = {0, 100, true, true, true};
 
 
     public:
