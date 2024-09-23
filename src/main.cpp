@@ -23,13 +23,14 @@ void updateCarData(){
     carData.ultrassound_reading_back_left = sensors.getUltrassoundDistance(5) * FLOAT_MULTIPLIER;
     carData.ultrassound_reading_back = sensors.getUltrassoundDistance(6) * FLOAT_MULTIPLIER;
     carData.ultrassound_reading_back_right = sensors.getUltrassoundDistance(7) * FLOAT_MULTIPLIER;
-    carData.motor_mode = 0;
+    carData.motor_left_mode = 0;
     //carData.motor_left_setpoint = 0;
     //carData.motor_left_speed = 0;
     //carData.motor_left_throttle = 0;
     carData.motor_left_kp = 1.1;
     carData.motor_left_ki = 1.2;
     carData.motor_left_kd = 1.3;
+    carData.motor_right_mode = 0;
     //carData.motor_right_setpoint = 0;
     //carData.motor_right_speed = 0;
     //carData.motor_right_throttle = 0;
@@ -111,14 +112,17 @@ void loop() {
             case COMMAND_MOTOR_LEFT_SETTHROTTLE:
                 carData.motor_left_throttle = command.value;
                 break;
+            case COMMAND_MOTOR_LEFT_SETMODE:
+                carData.motor_left_mode = command.value;
+                break;
             case COMMAND_MOTOR_RIGHT_SETSPEED:
                 carData.motor_right_setpoint = (float)(command.value) / FLOAT_MULTIPLIER;
                 break;
             case COMMAND_MOTOR_RIGHT_SETTHROTTLE:
                 carData.motor_right_throttle = command.value;
                 break;
-            case COMMAND_MOTOR_SETMOTORMODE:
-                carData.motor_mode = command.value;
+            case COMMAND_MOTOR_RIGHT_SETMODE:
+                carData.motor_right_mode = command.value;
                 break;
             
             default:

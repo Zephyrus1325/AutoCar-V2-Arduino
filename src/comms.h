@@ -15,13 +15,14 @@ struct CarData{
     int32_t ultrassound_reading_back;           // Float
     int32_t ultrassound_reading_back_left;      // Float    
     int32_t ultrassound_reading_back_right;     // Float    
-    int32_t motor_mode;
+    int32_t motor_left_mode;
     int32_t motor_left_setpoint;  // Float
     int32_t motor_left_speed;     // Float
     int32_t motor_left_throttle;
     int32_t motor_left_kp;          // Float
     int32_t motor_left_ki;          // Float
     int32_t motor_left_kd;          // Float
+    int32_t motor_right_mode;
     int32_t motor_right_setpoint;   // Float        
     int32_t motor_right_speed;      // Float    
     int32_t motor_right_throttle;

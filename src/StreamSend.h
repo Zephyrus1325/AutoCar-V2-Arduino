@@ -105,11 +105,11 @@ byte StreamSend::receiveObject(Stream &ostream, void* ptr, unsigned int objSize,
 }
 
 byte StreamSend::receiveObject(Stream &ostream, void* ptr, unsigned int objSize, unsigned int loopSize, char prefixChar, char suffixChar) {
-  int maxLoops = (_maxLoopsToWait == -1) ? (objSize+getWrapperSize()) : _maxLoopsToWait;
+  unsigned int maxLoops = (_maxLoopsToWait == -1) ? (objSize+getWrapperSize()) : _maxLoopsToWait;
   if(loopSize >= maxLoops) {
       return PACKET_NOT_FOUND;
   }
-  if(ostream.available() >= (objSize+getWrapperSize())) { // Packet meets minimum size requirement
+  if(ostream.available() >= (int)(objSize+getWrapperSize())) { // Packet meets minimum size requirement
     if(ostream.read() != (byte)prefixChar) {
       // Prefix character is not found
       // Loop through the code again reading the next char

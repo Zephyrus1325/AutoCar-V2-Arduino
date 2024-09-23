@@ -1,7 +1,16 @@
 #ifndef SENSORS_H
 #define SENSORS_H
+
+// Descomente esta linha para ativar o debug
+// (Mostrar todos os dados dos sensores no serial USB)
+//#define DEBUG
+
 #include <Arduino.h>
 #include "timer.h"
+#include "MPU6050.h"
+#include "HMC5883L.h"
+#include "BMP085.h"
+
 /*------------------------------------------------------------+
 |   Classes de Sensores - Marco Aurélio (08/09/2024)          |
 |                                                             |
@@ -131,20 +140,58 @@ class Infrared : public Sensor{
 // Eu vou me arrepender de fazer essa classe
 class InertialUnit : public Sensor{
     private:
-        int rawAccelX;
-        int rawAccelY;
-        int rawAccelZ;
-        int rawGyroX;
-        int rawGyroY;
-        int rawGyroZ;
-        int rawMagX;
-        int rawMagY;
-        int rawMagZ;
-        int rawBaro;
+    MPU6050 mpu;
+    HMC5883L mag;
+    BMP085 baro;
+
+    struct IMUReading {
+        int16_t rawAccelX;
+        int16_t rawAccelY;
+        int16_t rawAccelZ;
+        int16_t rawGyroX;
+        int16_t rawGyroY;
+        int16_t rawGyroZ;
+        int16_t rawMagX;
+        int16_t rawMagY;
+        int16_t rawMagZ;
+        int16_t rawBaro;
+        float treatedAccelX;
+        float treatedAccelY;
+        float treatedAccelZ;
+        float treatedGyroX;
+        float treatedGyroY;
+        float treatedGyroZ;
+        float treatedMagX;
+        float treatedMagY;
+        float treatedMagZ;
+        float treatedBaro;
+        float heading;
+        float pitch;
+        float roll;
+    };
+
+    IMUReading reading;
+    
+    timer updateTimer{0,0,100,true,true};
+
     public:
+    void begin(){
+        Wire.begin();
+        mpu.initialize();
+        mag.initialize();
+        baro.initialize();
+        #ifdef DEBUG
+            Serial.println(F("Testing I2C connections..."));
+            Serial.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
+            Serial.println(mag.testConnection() ? F("HMC5883L connection successful") : F("HMC5883L connection failed"));
+            Serial.println(baro.testConnection() ? F("BMP085 connection successful") : F("BMP085 connection failed"));
+        #endif
+    }
     // Atualiza as medições
     void update(){
-
+        if(updateTimer.CheckTime()){
+            mpu.getMotion6()
+        }
     }
 
 };
