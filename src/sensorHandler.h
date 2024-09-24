@@ -16,9 +16,10 @@ class SensorHandler{
     #define MAX_SENSORS 10
     unsigned int totalUltrassound = 0;              // Total atual de sensores Ultrassonicos
     unsigned int totalInfrared = 0;                 // Total atual de sensores Infravermelho
+    unsigned int totalIMU = 0;                      // Total atual de unidades inerciais
     Ultrassound ultrassoundSensors[MAX_SENSORS];    // Lista com todos os sensores Ultrassonicos Criados
     Infrared infraredSensors[MAX_SENSORS];          // Lista com todos os sensores Infravermelhos Criados   
-    
+    InertialUnit imu;                               // Unidade inercial criada
     public:
     SensorHandler(){}
 
@@ -34,11 +35,18 @@ class SensorHandler{
             Infrared& sensor = infraredSensors[i];
             sensor.update();
         }
+        if(totalIMU){
+            imu.update();
+        }
     }
 
     float getUltrassoundDistance(int id){
         Ultrassound& sensor = ultrassoundSensors[id];
         return sensor.getDistance();
+    }
+
+    IMUReading getIMUReading(){
+        return imu.reading;
     }
 
     /*-------------------------------------------------------------------------------------+
@@ -79,6 +87,14 @@ class SensorHandler{
             infraredSensors[totalInfrared] = Infrared(pin, mode);
             infraredSensors[totalInfrared].begin();
             totalInfrared++;
+        }
+    }
+
+    void addInertialUnit(){
+        if(!totalIMU){
+            imu = InertialUnit();
+            imu.begin();
+            totalIMU++;
         }
     }
 };

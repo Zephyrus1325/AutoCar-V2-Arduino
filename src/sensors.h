@@ -136,15 +136,7 @@ class Infrared : public Sensor{
     float getDistance(){return distance;}
 };
 
-
-// Eu vou me arrepender de fazer essa classe
-class InertialUnit : public Sensor{
-    private:
-    MPU6050 mpu;
-    HMC5883L mag;
-    BMP085 baro;
-
-    struct IMUReading {
+struct IMUReading {
         int16_t rawAccelX;
         int16_t rawAccelY;
         int16_t rawAccelZ;
@@ -154,32 +146,45 @@ class InertialUnit : public Sensor{
         int16_t rawMagX;
         int16_t rawMagY;
         int16_t rawMagZ;
-        int16_t rawBaro;
-        float treatedAccelX;
-        float treatedAccelY;
-        float treatedAccelZ;
-        float treatedGyroX;
-        float treatedGyroY;
-        float treatedGyroZ;
-        float treatedMagX;
-        float treatedMagY;
-        float treatedMagZ;
-        float treatedBaro;
+        int16_t rawPressure;
+        int16_t rawTemperature;
+        float accelX;
+        float accelY;
+        float accelZ;
+        float gyroX;
+        float gyroY;
+        float gyroZ;
+        float magX;
+        float magY;
+        float magZ;
+        float pressure;
+        float temperature;
         float heading;
         float pitch;
         float roll;
     };
 
-    IMUReading reading;
-    
+
+// Eu vou me arrepender de fazer essa classe
+class InertialUnit : public Sensor{
+    private:
+    MPU6050 mpu;
+    HMC5883L mag;
+    BMP085 baro;
     timer updateTimer{0,0,100,true,true};
 
     public:
+
+    IMUReading reading;
+    InertialUnit(){};
+
     void begin(){
         Wire.begin();
         mpu.initialize();
         mag.initialize();
         baro.initialize();
+        mag.setMode(HMC5883L_MODE_CONTINUOUS);
+        mag.setDataRate(HMC5883L_RATE_15);
         #ifdef DEBUG
             Serial.println(F("Testing I2C connections..."));
             Serial.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
@@ -190,7 +195,12 @@ class InertialUnit : public Sensor{
     // Atualiza as medições
     void update(){
         if(updateTimer.CheckTime()){
-            mpu.getMotion6()
+            mpu.getMotion6(&reading.rawAccelX, &reading.rawAccelY, &reading.rawAccelZ, &reading.rawGyroX, &reading.rawGyroY, &reading.rawGyroZ);
+            mag.getHeading(&reading.rawMagX, &reading.rawMagY, &reading.rawMagZ);
+            reading.rawPressure = baro.getRawPressure();
+            reading.rawTemperature = baro.getRawTemperature();
+            reading.pressure = baro.getPressure();
+            reading.temperature = baro.getTemperatureC();
         }
     }
 

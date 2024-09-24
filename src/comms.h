@@ -47,6 +47,10 @@ struct CarData{
     int32_t mag_treated_x;
     int32_t mag_treated_y;
     int32_t mag_treated_z;
+    int32_t raw_temperature;
+    int32_t temperature;    // Float
+    int32_t raw_pressure;
+    int32_t pressure;       // Float
     int32_t navigation_mode;
     int32_t navigation_position_x;
     int32_t navigation_position_y;

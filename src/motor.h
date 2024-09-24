@@ -21,14 +21,20 @@ class Motor{
     unsigned int encoderPin = 50; // Pino do encoder rotativo
 
     // Parametros caso queira controlar o motor com PID (espero que meu sofrimento valha a pena)
-    float actualSpeed; // Velocidade atual do motor
-    float setpoint;    // Velocidade de objetivo do motor
     float PIDIntegral; // Integral usada no controlador PID
     float lastSpeed;   // Ultimo valor lido, usado no calculo da derivada no controlador PID
-    float Kp, Ki, Kd;  // Parametros de calibração do controlador PID
-    timer updateTimer{1000, 0, true, true, false};
+
+    float rpm;                     // RPM atual do motor
+    const float wheelDiameter = 12.00;    // Diametro da roda
+    unsigned long lastEncoderTime = 0; // Instante da ultima leitura do encoder rotativo
+    timer updateTimer{100, 0, true, true, false};
 
     public:
+    unsigned int motorMode = 0;    // Modo do motor (0 = PID ON | 1 = PID Off)
+    int throttle = 0;                  // Controle manual do motor
+    float actualSpeed; // Velocidade atual do motor
+    float setpoint;    // Velocidade de objetivo do motor
+    float Kp, Ki, Kd;  // Parametros de calibração do controlador PID
     Motor(unsigned int dirA, unsigned int dirB, unsigned int pwm) : dirAPin(dirA), dirBPin(dirB), pwmPin(pwm){}
     Motor(unsigned int dirA, unsigned int dirB, unsigned int pwm, unsigned int encoder) : dirAPin(dirA), dirBPin(dirB), pwmPin(pwm), encoderPin(encoder){}
 
@@ -43,18 +49,34 @@ class Motor{
     // Atualiza coisas do motor como PID, velocidade, entre outros
     // ** Executar esta função todos os loops **
     void update(){
-        if(updateTimer.CheckTime()){
-            float error = setpoint - actualSpeed;
-            float PIDderivative = (actualSpeed - lastSpeed) * updateTimer.lastMillis;
-            PIDIntegral += error * updateTimer.lastMillis;
+        if(!motorMode){
+            if(updateTimer.CheckTime()){
+                float error = setpoint - actualSpeed;
+                float PIDderivative = (actualSpeed - lastSpeed) * updateTimer.lastMillis;
+                PIDIntegral += error * updateTimer.lastMillis;
 
-            float proportional = Kp * error;
-            float integral = Ki * PIDIntegral;
-            float derivative = Kd * PIDderivative;
+                float proportional = Kp * error;
+                float integral = Ki * PIDIntegral;
+                float derivative = Kd * PIDderivative;
 
-            int output = (int)(proportional + integral + derivative);
-            setSpeed(output);
+                throttle = (int)(proportional + integral + derivative);
+            }
         }
+        setSpeed(throttle);
+    }
+
+    void setThrottle(int t){
+        throttle = t;
+    }
+
+    void setMode(int mode){
+        motorMode = mode;
+        // Reseta a potencia caso aconteça de colocar no modo manual e o PID comandar alguma potencia ainda
+        throttle = 0;       
+    }
+
+    void setSetpoint(float speed){
+        setpoint = speed;
     }
     
     // Define direção e potência do motor
@@ -74,7 +96,9 @@ class Motor{
     // vou ter que fazer alguma magia pra converter um void (Motor::*)() para um void (*)()
 
     void sensorUpdate(){
-
+        float rps = 50/(millis() - lastEncoderTime);
+        actualSpeed = rps * wheelDiameter * PI;
+        lastEncoderTime = millis();
     }
 };
 
