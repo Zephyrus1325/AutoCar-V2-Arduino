@@ -93,11 +93,11 @@ byte receiveData(Command* command){
     return packetStatus;
     //Debugging Info
     //if(packetStatus == GOOD_PACKET){
-    //    //Serial.print("Received Healty Packet: ");
-    //    //Serial.println(sizeof(*command));
+    //    Serial.print("Received Healty Packet: ");
+    //    Serial.println(sizeof(*command));
     //} else if(packetStatus == BAD_PACKET){
-    //    //Serial.println("Bad Packet: ");
-    //    //Serial.println(sizeof(*command));
+    //    Serial.println("Bad Packet: ");
+    //    Serial.println(sizeof(*command));
     //}
 }
 

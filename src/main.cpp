@@ -11,6 +11,7 @@ Motor rightMotor(PIN_MOTOR_RIGHT_DIRA, PIN_MOTOR_RIGHT_DIRB, PIN_MOTOR_RIGHT_PWM
 CarData carData;
 Command command;
 const long ultrassoundUpdateTime = 100;
+int navMode = 0;
 
 void updateCarData(){
     carData.battery_voltage = 0;
@@ -59,7 +60,7 @@ void updateCarData(){
     carData.raw_temperature = sensors.getIMUReading().rawTemperature;
     carData.pressure = sensors.getIMUReading().pressure;
     carData.temperature = sensors.getIMUReading().temperature;
-    carData.navigation_mode = 0;
+    carData.navigation_mode = navMode;
     carData.navigation_position_x = 0;
     carData.navigation_position_y = 0;
     carData.navigation_position_z = 0;
@@ -106,8 +107,8 @@ void loop() {
     sendData(&carData);
     // Se um comando foi recebido
     if(receiveData(&command) == GOOD_PACKET){
-        
         switch(command.index){
+            
             // Invalid case
             case 0:
                 break;
@@ -129,7 +130,9 @@ void loop() {
             case COMMAND_MOTOR_RIGHT_SETMODE:
                 rightMotor.setMode(command.value);
                 break;
-            
+            case COMMAND_NAVIGATION_SETMODE:
+                navMode = command.value;
+                break;
             default:
                 break;
         }
