@@ -148,20 +148,20 @@ struct IMUReading {
         int16_t rawMagZ;
         int16_t rawPressure;
         int16_t rawTemperature;
-        float accelX;
-        float accelY;
-        float accelZ;
-        float gyroX;
-        float gyroY;
-        float gyroZ;
+        float accelX; // cm/s
+        float accelY; // cm/s
+        float accelZ; // cm/s
+        float gyroX; // Graus/s
+        float gyroY; // Graus/s
+        float gyroZ; // Graus/s
         float magX;
         float magY;
         float magZ;
         float pressure;
         float temperature;
-        float heading;
-        float pitch;
-        float roll;
+        float heading; // Graus
+        float pitch;   // Graus
+        float roll;    // Graus
     };
 
 
@@ -172,6 +172,10 @@ class InertialUnit : public Sensor{
     HMC5883L mag;
     BMP085 baro;
     timer updateTimer{0,0,100,true,true};
+    float magHeading = 0;      // Heading Calculado pelo magnetometro
+    float accPitch = 0;        // Pitch estimado pelo acelerometro
+    float accRoll = 0;         // Roll estimado pelo acelerometro
+    float mixMultiplier = 0.01;// Multiplicador de quanto receber da leitura sem referencial
 
     public:
 
@@ -201,6 +205,25 @@ class InertialUnit : public Sensor{
             reading.rawTemperature = baro.getRawTemperature();
             reading.pressure = baro.getPressure();
             reading.temperature = baro.getTemperatureC();
+            
+            reading.gyroX = (float) (reading.rawGyroX * 250.0f) / (pow(2,15));
+            reading.gyroY = (float) (reading.rawGyroY * 250.0f) / (pow(2,15));
+            reading.gyroZ = (float) (reading.rawGyroZ * 250.0f) / (pow(2,15));
+            
+            // Leitura e calculo dos valores relativos ao referencial absoluto
+            float magHeading = atan2(reading.rawMagY, reading.rawMagX) * 180.0f / PI;
+            float magHeading = (atan2(reading.accelY, sqrt(pow(reading.accelX, 2) + pow(reading.accelZ, 2))) * 180.0f / PI);
+            float accRoll = (atan2(-reading.accelX, sqrt(pow(reading.accelY, 2) + pow(reading.accelZ, 2))) * 180.0f / PI);
+            
+
+            // Caralho eu não sei como fazer essa conta
+            // Atual = Atual + variação confiavel * 0.99 + Variação consistente * 0.01
+            reading.pitch = reading.gyroX * (1-mixMultiplier) + accPitch * mixMultiplier;
+            reading.roll = reading.gyroY * (1-mixMultiplier) + accRoll * mixMultiplier;
+            reading.heading = reading.gyroZ * (1-mixMultiplier) + magHeading * mixMultiplier;
+            
+            
+
         }
     }
 
