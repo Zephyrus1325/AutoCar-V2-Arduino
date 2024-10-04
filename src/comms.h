@@ -4,6 +4,9 @@
 #include "timer.h"
 #include "StreamSend.h"
 
+// Descomente essa linha para habilitar debug de tudo
+//#define DEBUG
+
 struct CarData{
     int32_t battery_voltage;                    // Float
     int32_t battery_percentage;
@@ -79,8 +82,10 @@ void sendData(CarData* data){
     if(sendTimer.CheckTime()){
         StreamSend::sendObject(Serial2, data, sizeof(*data));
         // Debug Info
-        //Serial.print("Sent Packet! Size: ");
-        //Serial.println((int)sizeof(*data));
+        #ifdef DEBUG
+            Serial.print("Sent Packet! Size: ");
+            Serial.println((int)sizeof(*data));
+        #endif
     }   
 }
 
@@ -92,18 +97,20 @@ byte receiveData(Command* command){
     byte packetStatus = StreamSend::receiveObject(Serial2, command, sizeof(*command));
     return packetStatus;
     //Debugging Info
-    //if(packetStatus == GOOD_PACKET){
-    //    Serial.print("Received Healty Packet: ");
-    //    Serial.print("{ ");
-    //    Serial.print(command->index);
-    //    Serial.print(" | ");
-    //    Serial.print(command->value);
-    //    Serial.print(" } Size: ");
-    //    Serial.println((int)sizeof(*command));
-    //} else if(packetStatus == BAD_PACKET){
-    //    Serial.println("Bad Packet: Size: ");
-    //    Serial.println((int)sizeof(*command));
-    //}
+    #ifdef DEBUG
+        if(packetStatus == GOOD_PACKET){
+            Serial.print("Received Healty Packet: ");
+            Serial.print("{ ");
+            Serial.print(command->index);
+            Serial.print(" | ");
+            Serial.print(command->value);
+            Serial.print(" } Size: ");
+            Serial.println((int)sizeof(*command));
+        } else if(packetStatus == BAD_PACKET){
+            Serial.println("Bad Packet: Size: ");
+            Serial.println((int)sizeof(*command));
+        }
+    #endif
 }
 
 

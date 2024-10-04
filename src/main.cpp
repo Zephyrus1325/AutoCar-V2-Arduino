@@ -4,6 +4,7 @@
 #include "motor.h"
 #include "comms.h"
 #include "defines.h"
+#include "buzzer.h"
 
 // Descomente essa linha para habilitar debug de tudo
 //#define DEBUG
@@ -16,8 +17,7 @@ Command command;
 const long ultrassoundUpdateTime = 100;
 int navMode = 0;
 
-timer buzzerTimer{0,500,true,true,true};
-bool buzzerStatus = false;
+Buzzer buzzer(PIN_BUZZER);
 
 void updateCarData(){
     carData.battery_voltage = 0;
@@ -104,7 +104,7 @@ void setup() {
     rightMotor.begin();
     attachInterrupt(digitalPinToInterrupt(PIN_MOTOR_LEFT_ENCODER), leftEncoder, RISING);
     attachInterrupt(digitalPinToInterrupt(PIN_MOTOR_RIGHT_ENCODER), rightEncoder, RISING);
-    pinMode(PIN_BUZZER, OUTPUT);
+    buzzer.begin();
     Serial.begin(115200);
     Serial2.begin(115200);
 }
@@ -112,6 +112,7 @@ void loop() {
     sensors.update();
     leftMotor.update();
     rightMotor.update();
+    buzzer.update();
     updateCarData();
     sendData(&carData);
     // Se um comando foi recebido
@@ -170,6 +171,8 @@ void loop() {
             case COMMAND_NAVIGATION_SETMODE:
                 navMode = command.value;
                 break;
+            case COMMAND_BUZZER_SETSTATE:
+                buzzer.play(command.value);
             default:
                 break;
         }
