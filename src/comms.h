@@ -32,21 +32,21 @@ struct CarData{
     int32_t gyro_raw_x;
     int32_t gyro_raw_y;
     int32_t gyro_raw_z;
-    int32_t gyro_treated_x;
-    int32_t gyro_treated_y;
-    int32_t gyro_treated_z;
+    int32_t gyro_treated_x; // Float
+    int32_t gyro_treated_y; // Float
+    int32_t gyro_treated_z; // Float
     int32_t acc_raw_x;
     int32_t acc_raw_y;
     int32_t acc_raw_z;
-    int32_t acc_treated_x;
-    int32_t acc_treated_y;
-    int32_t acc_treated_z;
+    int32_t acc_treated_x;  // Float
+    int32_t acc_treated_y;  // Float
+    int32_t acc_treated_z;  // Float
     int32_t mag_raw_x;
     int32_t mag_raw_y;
     int32_t mag_raw_z;
-    int32_t mag_treated_x;
-    int32_t mag_treated_y;
-    int32_t mag_treated_z;
+    int32_t mag_treated_x;  // Float
+    int32_t mag_treated_y;  // Float
+    int32_t mag_treated_z;  // Float
     int32_t raw_temperature;
     int32_t temperature;    // Float
     int32_t raw_pressure;
@@ -94,10 +94,15 @@ byte receiveData(Command* command){
     //Debugging Info
     //if(packetStatus == GOOD_PACKET){
     //    Serial.print("Received Healty Packet: ");
-    //    Serial.println(sizeof(*command));
+    //    Serial.print("{ ");
+    //    Serial.print(command->index);
+    //    Serial.print(" | ");
+    //    Serial.print(command->value);
+    //    Serial.print(" } Size: ");
+    //    Serial.println((int)sizeof(*command));
     //} else if(packetStatus == BAD_PACKET){
-    //    Serial.println("Bad Packet: ");
-    //    Serial.println(sizeof(*command));
+    //    Serial.println("Bad Packet: Size: ");
+    //    Serial.println((int)sizeof(*command));
     //}
 }
 

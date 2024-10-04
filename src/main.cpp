@@ -5,6 +5,9 @@
 #include "comms.h"
 #include "defines.h"
 
+// Descomente essa linha para habilitar debug de tudo
+//#define DEBUG
+
 SensorHandler sensors;
 Motor leftMotor(PIN_MOTOR_LEFT_DIRA, PIN_MOTOR_LEFT_DIRB, PIN_MOTOR_LEFT_PWM, PIN_MOTOR_LEFT_ENCODER);
 Motor rightMotor(PIN_MOTOR_RIGHT_DIRA, PIN_MOTOR_RIGHT_DIRB, PIN_MOTOR_RIGHT_PWM, PIN_MOTOR_RIGHT_ENCODER);
@@ -13,60 +16,63 @@ Command command;
 const long ultrassoundUpdateTime = 100;
 int navMode = 0;
 
+timer buzzerTimer{0,500,true,true,true};
+bool buzzerStatus = false;
+
 void updateCarData(){
     carData.battery_voltage = 0;
     carData.battery_percentage = 0;
-    carData.ultrassound_reading_front = sensors.getUltrassoundDistance(0) * FLOAT_MULTIPLIER;
-    carData.ultrassound_reading_front_left = sensors.getUltrassoundDistance(1) * FLOAT_MULTIPLIER;
-    carData.ultrassound_reading_front_right = sensors.getUltrassoundDistance(2) * FLOAT_MULTIPLIER;
-    carData.ultrassound_reading_left = sensors.getUltrassoundDistance(3) * FLOAT_MULTIPLIER;
-    carData.ultrassound_reading_right = sensors.getUltrassoundDistance(4) * FLOAT_MULTIPLIER;
-    carData.ultrassound_reading_back_left = sensors.getUltrassoundDistance(5) * FLOAT_MULTIPLIER;
-    carData.ultrassound_reading_back = sensors.getUltrassoundDistance(6) * FLOAT_MULTIPLIER;
-    carData.ultrassound_reading_back_right = sensors.getUltrassoundDistance(7) * FLOAT_MULTIPLIER;
+    carData.ultrassound_reading_front = sensors.getUltrassoundDistance(0);
+    carData.ultrassound_reading_front_left = sensors.getUltrassoundDistance(1);
+    carData.ultrassound_reading_front_right = sensors.getUltrassoundDistance(2);
+    carData.ultrassound_reading_left = sensors.getUltrassoundDistance(3);
+    carData.ultrassound_reading_right = sensors.getUltrassoundDistance(4);
+    carData.ultrassound_reading_back_left = sensors.getUltrassoundDistance(5);
+    carData.ultrassound_reading_back = sensors.getUltrassoundDistance(6);
+    carData.ultrassound_reading_back_right = sensors.getUltrassoundDistance(7);
     carData.motor_left_mode = leftMotor.motorMode;
-    carData.motor_left_setpoint = leftMotor.setpoint;
-    carData.motor_left_speed = leftMotor.actualSpeed;
+    carData.motor_left_setpoint = leftMotor.setpoint * FLOAT_MULTIPLIER;
+    carData.motor_left_speed = leftMotor.actualSpeed * FLOAT_MULTIPLIER;
     carData.motor_left_throttle = leftMotor.throttle;
-    carData.motor_left_kp = leftMotor.Kp;
-    carData.motor_left_ki = leftMotor.Ki;
-    carData.motor_left_kd = leftMotor.Kd;
+    carData.motor_left_kp = leftMotor.Kp * FLOAT_MULTIPLIER;
+    carData.motor_left_ki = leftMotor.Ki * FLOAT_MULTIPLIER;
+    carData.motor_left_kd = leftMotor.Kd * FLOAT_MULTIPLIER;
     carData.motor_right_mode = rightMotor.motorMode;
-    carData.motor_right_setpoint = rightMotor.setpoint;
-    carData.motor_right_speed = rightMotor.actualSpeed;
+    carData.motor_right_setpoint = rightMotor.setpoint * FLOAT_MULTIPLIER;
+    carData.motor_right_speed = rightMotor.actualSpeed * FLOAT_MULTIPLIER;
     carData.motor_right_throttle = rightMotor.throttle;
-    carData.motor_right_kp = rightMotor.Kp;
-    carData.motor_right_ki = rightMotor.Ki;
-    carData.motor_right_kd = rightMotor.Kd;
+    carData.motor_right_kp = rightMotor.Kp * FLOAT_MULTIPLIER;
+    carData.motor_right_ki = rightMotor.Ki * FLOAT_MULTIPLIER;
+    carData.motor_right_kd = rightMotor.Kd * FLOAT_MULTIPLIER;
     carData.gyro_raw_x = sensors.getIMUReading().rawGyroX;
     carData.gyro_raw_y = sensors.getIMUReading().rawGyroY;
     carData.gyro_raw_z = sensors.getIMUReading().rawGyroZ;
-    carData.gyro_treated_x = sensors.getIMUReading().gyroX;
-    carData.gyro_treated_y = sensors.getIMUReading().gyroY;
-    carData.gyro_treated_z = sensors.getIMUReading().gyroZ;
+    carData.gyro_treated_x = sensors.getIMUReading().gyroX * FLOAT_MULTIPLIER;
+    carData.gyro_treated_y = sensors.getIMUReading().gyroY * FLOAT_MULTIPLIER;
+    carData.gyro_treated_z = sensors.getIMUReading().gyroZ * FLOAT_MULTIPLIER;
     carData.acc_raw_x = sensors.getIMUReading().rawAccelX;
     carData.acc_raw_y = sensors.getIMUReading().rawAccelY;
     carData.acc_raw_z = sensors.getIMUReading().rawAccelZ;
-    carData.acc_treated_x = sensors.getIMUReading().accelX;
-    carData.acc_treated_y = sensors.getIMUReading().accelY;
-    carData.acc_treated_z = sensors.getIMUReading().accelZ;
+    carData.acc_treated_x = sensors.getIMUReading().accelX * FLOAT_MULTIPLIER;
+    carData.acc_treated_y = sensors.getIMUReading().accelY * FLOAT_MULTIPLIER;
+    carData.acc_treated_z = sensors.getIMUReading().accelZ * FLOAT_MULTIPLIER;
     carData.mag_raw_x = sensors.getIMUReading().rawMagX;
     carData.mag_raw_y = sensors.getIMUReading().rawMagY;
     carData.mag_raw_z = sensors.getIMUReading().rawMagZ; 
-    carData.mag_treated_x = sensors.getIMUReading().magX;
-    carData.mag_treated_y = sensors.getIMUReading().magY;
-    carData.mag_treated_z = sensors.getIMUReading().magZ;
+    carData.mag_treated_x = sensors.getIMUReading().magX * FLOAT_MULTIPLIER;
+    carData.mag_treated_y = sensors.getIMUReading().magY * FLOAT_MULTIPLIER;
+    carData.mag_treated_z = sensors.getIMUReading().magZ * FLOAT_MULTIPLIER;
     carData.raw_pressure = sensors.getIMUReading().rawPressure;
     carData.raw_temperature = sensors.getIMUReading().rawTemperature;
-    carData.pressure = sensors.getIMUReading().pressure;
-    carData.temperature = sensors.getIMUReading().temperature;
+    carData.pressure = sensors.getIMUReading().pressure * FLOAT_MULTIPLIER;
+    carData.temperature = sensors.getIMUReading().temperature * FLOAT_MULTIPLIER;
     carData.navigation_mode = navMode;
     carData.navigation_position_x = 0;
     carData.navigation_position_y = 0;
     carData.navigation_position_z = 0;
-    carData.navigation_position_pitch = sensors.getIMUReading().pitch;
-    carData.navigation_position_roll = sensors.getIMUReading().roll;
-    carData.navigation_position_heading = sensors.getIMUReading().heading;
+    carData.navigation_position_pitch = sensors.getIMUReading().pitch * FLOAT_MULTIPLIER;
+    carData.navigation_position_roll = sensors.getIMUReading().roll * FLOAT_MULTIPLIER;
+    carData.navigation_position_heading = sensors.getIMUReading().heading * FLOAT_MULTIPLIER;
     carData.navigation_destination_x = 0;
     carData.navigation_destination_y = 0;
     carData.navigation_destination_z = 0;
@@ -98,15 +104,26 @@ void setup() {
     rightMotor.begin();
     attachInterrupt(digitalPinToInterrupt(PIN_MOTOR_LEFT_ENCODER), leftEncoder, RISING);
     attachInterrupt(digitalPinToInterrupt(PIN_MOTOR_RIGHT_ENCODER), rightEncoder, RISING);
+    pinMode(PIN_BUZZER, OUTPUT);
     Serial.begin(115200);
     Serial2.begin(115200);
 }
 void loop() {
     sensors.update();
+    leftMotor.update();
+    rightMotor.update();
     updateCarData();
     sendData(&carData);
     // Se um comando foi recebido
     if(receiveData(&command) == GOOD_PACKET){
+        
+        #ifdef DEBUG
+        Serial.print("Received Command ID: ");
+        Serial.print(command.index);
+        Serial.print(" Value: ");
+        Serial.println(command.value);
+        #endif
+
         switch(command.index){
             
             // Invalid case
@@ -121,6 +138,16 @@ void loop() {
             case COMMAND_MOTOR_LEFT_SETMODE:
                 leftMotor.setMode(command.value);
                 break;
+            case COMMAND_MOTOR_LEFT_SETKP:
+                leftMotor.setKp((float) (command.value) / FLOAT_MULTIPLIER);
+                break;
+            case COMMAND_MOTOR_LEFT_SETKI:
+                leftMotor.setKi((float) (command.value) / FLOAT_MULTIPLIER);
+                leftMotor.resetIntegral();
+                break;
+            case COMMAND_MOTOR_LEFT_SETKD:
+                leftMotor.setKd((float) (command.value) / FLOAT_MULTIPLIER);
+                break;
             case COMMAND_MOTOR_RIGHT_SETSPEED:
                 rightMotor.setSetpoint((float)(command.value) / FLOAT_MULTIPLIER);
                 break;
@@ -129,6 +156,16 @@ void loop() {
                 break;
             case COMMAND_MOTOR_RIGHT_SETMODE:
                 rightMotor.setMode(command.value);
+                break;
+            case COMMAND_MOTOR_RIGHT_SETKP:
+                rightMotor.setKp((float) (command.value) / FLOAT_MULTIPLIER);
+                break;
+            case COMMAND_MOTOR_RIGHT_SETKI:
+                rightMotor.setKi((float) (command.value) / FLOAT_MULTIPLIER);
+                rightMotor.resetIntegral();
+                break;
+            case COMMAND_MOTOR_RIGHT_SETKD:
+                rightMotor.setKd((float) (command.value) / FLOAT_MULTIPLIER);
                 break;
             case COMMAND_NAVIGATION_SETMODE:
                 navMode = command.value;
