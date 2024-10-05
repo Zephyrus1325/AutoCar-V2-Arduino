@@ -1,5 +1,4 @@
-#ifndef SENSORS_H
-#define SENSORS_H
+#pragma once
 
 // Descomente esta linha para ativar o debug
 // (Mostrar todos os dados dos sensores no serial USB)
@@ -159,14 +158,11 @@ struct IMUReading {
         float gyroX; // Graus/s
         float gyroY; // Graus/s
         float gyroZ; // Graus/s
-        float magX;
-        float magY;
-        float magZ;
+        float magX;  // Gauss ...?
+        float magY;  // Gauss ...?
+        float magZ;  // Gauss ...?
         float pressure;
         float temperature;
-        float heading; // Graus
-        float pitch;   // Graus
-        float roll;    // Graus
     };
 
 
@@ -251,5 +247,3 @@ class InertialUnit : public Sensor{
     }
 
 };
-
-#endif

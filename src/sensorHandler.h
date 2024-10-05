@@ -1,5 +1,5 @@
-#ifndef SENSOR_HANDLER_H
-#define SENSOR_HANDLER_H
+#pragma once
+
 #include "sensors.h"
 /*--------------------------------------------------------------------------------------+
 |   Classe de Manipulador de Sensores - Marco Aurélio (08/09/2024)                      |
@@ -98,4 +98,3 @@ class SensorHandler{
         }
     }
 };
-#endif

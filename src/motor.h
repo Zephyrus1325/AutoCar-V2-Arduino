@@ -1,5 +1,4 @@
-#ifndef MOTOR_H
-#define MOTOR_H
+#pragma once
 #include <Arduino.h>
 #include "timer.h"
 
@@ -133,5 +132,3 @@ class Motor{
         lastEncoderTime = millis();
     }
 };
-
-#endif

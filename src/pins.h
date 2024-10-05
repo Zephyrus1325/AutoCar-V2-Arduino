@@ -1,4 +1,5 @@
-#ifndef PINS_H
+#pragma once
+
 #include "Arduino.h"
 
 // Pinos dos Ultrassons
@@ -30,5 +31,3 @@
 #define PIN_MOTOR_RIGHT_ENCODER 3
 
 #define PIN_BUZZER 4
-
-#endif

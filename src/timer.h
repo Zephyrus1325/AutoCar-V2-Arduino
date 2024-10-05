@@ -1,5 +1,5 @@
-#ifndef TIMER_H
-#define TIMER_H
+#pragma once
+
 #include "Arduino.h"
 /*---------------------------------------------------------------------------------------+
 |    Struct de timer - Marco Aurélio (08/09/2024)                                        |
@@ -46,5 +46,3 @@ struct timer{
     }
   
 };
-
-#endif

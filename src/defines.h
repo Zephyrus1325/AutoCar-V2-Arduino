@@ -1,5 +1,4 @@
-#ifndef DEFINES_H
-#define DEFINES_H
+#pragma once
 
 #define BATTERY_MAX_VOLTAGE 11.1f
 #define FLOAT_MULTIPLIER 1000
@@ -29,7 +28,3 @@
 #define BUZZER_CAR_BEGIN 1
 #define BUZZER_BATTERY_ALERT 2
 #define BUZZER_BATTERY_CRITICAL 3
-
-
-
-#endif

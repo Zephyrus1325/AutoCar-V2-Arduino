@@ -1,7 +1,6 @@
-#include "Arduino.h"
+#pragma once
 
-#ifndef STREAMSEND_H
-#define STREAMSEND_H
+#include "Arduino.h"
 
 
 #define PACKET_NOT_FOUND 0
@@ -141,5 +140,3 @@ boolean StreamSend::isPacketCorrupt(const byte packetStatus) {
 boolean StreamSend::isPacketGood(const byte packetStatus) {
     return (packetStatus == GOOD_PACKET);
 }
-
-#endif

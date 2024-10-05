@@ -1,5 +1,5 @@
-#ifndef COMMS_H
-#define COMMS_H
+#pragma once
+
 #include "Arduino.h"
 #include "timer.h"
 #include "StreamSend.h"
@@ -112,8 +112,3 @@ byte receiveData(Command* command){
         }
     #endif
 }
-
-
-
-
-#endif
