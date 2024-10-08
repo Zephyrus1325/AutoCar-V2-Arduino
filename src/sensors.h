@@ -202,6 +202,8 @@ class InertialUnit : public Sensor{
         Wire.endTransmission();
 
         mpu.initialize();
+        mpu.CalibrateAccel();
+        mpu.CalibrateGyro();
         mag.initialize();
         baro.begin();
         mag.setMode(HMC5883L_MODE_CONTINUOUS);
@@ -240,9 +242,6 @@ class InertialUnit : public Sensor{
             //reading.pitch = reading.gyroX * (1-mixMultiplier) + accPitch * mixMultiplier;
             //reading.roll = reading.gyroY * (1-mixMultiplier) + accRoll * mixMultiplier;
             //reading.heading = reading.gyroZ * (1-mixMultiplier) + magHeading * mixMultiplier;
-            reading.pitch = accPitch;
-            reading.roll = accRoll;
-            reading.heading = magHeading;
         }
     }
 

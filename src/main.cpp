@@ -2,6 +2,7 @@
 #include "pins.h"
 #include "sensorHandler.h"
 #include "motor.h"
+#include "navigation.h"
 #include "comms.h"
 #include "defines.h"
 #include "buzzer.h"
@@ -14,8 +15,11 @@ Motor leftMotor(PIN_MOTOR_LEFT_DIRA, PIN_MOTOR_LEFT_DIRB, PIN_MOTOR_LEFT_PWM, PI
 Motor rightMotor(PIN_MOTOR_RIGHT_DIRA, PIN_MOTOR_RIGHT_DIRB, PIN_MOTOR_RIGHT_PWM, PIN_MOTOR_RIGHT_ENCODER);
 CarData carData;
 Command command;
+Navigation navigation;
 const long ultrassoundUpdateTime = 100;
 int navMode = 0;
+
+bool walkFlag = false;
 
 Buzzer buzzer(PIN_BUZZER);
 
@@ -67,12 +71,12 @@ void updateCarData(){
     carData.pressure = sensors.getIMUReading().pressure * FLOAT_MULTIPLIER;
     carData.temperature = sensors.getIMUReading().temperature * FLOAT_MULTIPLIER;
     carData.navigation_mode = navMode;
-    carData.navigation_position_x = 0;
-    carData.navigation_position_y = 0;
-    carData.navigation_position_z = 0;
-    carData.navigation_position_pitch = sensors.getIMUReading().pitch * FLOAT_MULTIPLIER;
-    carData.navigation_position_roll = sensors.getIMUReading().roll * FLOAT_MULTIPLIER;
-    carData.navigation_position_heading = sensors.getIMUReading().heading * FLOAT_MULTIPLIER;
+    carData.navigation_position_x = navigation.getPosX();
+    carData.navigation_position_y = navigation.getPosY();
+    carData.navigation_position_z = navigation.getPosZ();
+    carData.navigation_position_pitch = 0; //sensors.getIMUReading().pitch * FLOAT_MULTIPLIER;
+    carData.navigation_position_roll = 0; //sensors.getIMUReading().roll * FLOAT_MULTIPLIER;
+    carData.navigation_position_heading = navigation.getHeading() * FLOAT_MULTIPLIER; //sensors.getIMUReading().heading * FLOAT_MULTIPLIER;
     carData.navigation_destination_x = 0;
     carData.navigation_destination_y = 0;
     carData.navigation_destination_z = 0;
@@ -112,9 +116,15 @@ void loop() {
     sensors.update();
     leftMotor.update();
     rightMotor.update();
+    navigation.update(sensors.getIMUReading(), leftMotor.getSpeed(), rightMotor.getSpeed());
     buzzer.update();
     updateCarData();
     sendData(&carData);
+    if(walkFlag && navigation.getPosX() > 300){
+        leftMotor.setMode(1);
+        rightMotor.setMode(1);
+        walkFlag = false;
+    }
     // Se um comando foi recebido
     if(receiveData(&command) == GOOD_PACKET){
         
@@ -173,6 +183,15 @@ void loop() {
                 break;
             case COMMAND_BUZZER_SETSTATE:
                 buzzer.play(command.value);
+                break;
+            case COMMAND_TEMP_3_METERS:
+                leftMotor.setMode(0);
+                rightMotor.setMode(0);
+                navigation.reset();
+                leftMotor.setSetpoint(80);
+                rightMotor.setSetpoint(80);
+                walkFlag = true;
+                break;
             default:
                 break;
         }

@@ -24,18 +24,19 @@ class Motor{
     unsigned long lastUpdateTime = 0; // Momento do ultimo loop do PID
 
     float rpm;                     // RPM atual do motor
-    const float timeout = 1000;     // Tempo em milissegundos do timeout do sensor de rotação
-    const float wheelDiameter = 12.00;    // Diametro da roda
+    const float timeout = 150;     // Tempo em milissegundos do timeout do sensor de rotação
+    const float wheelCircunference = 6.7f * PI;    // Diametro da roda
     unsigned long lastEncoderTime = 0; // Instante da ultima leitura do encoder rotativo
     timer updateTimer{0, 50, true, true, false};    // Timer que controla a frequencia de update do PID
+    const float maxSpeed = 1000.f;     // Velocidade maxima que o motor deveria chegar (evita problemas com divisão por zero)
 
     public:
     unsigned int motorMode = 0;    // Modo do motor (0 = PID ON | 1 = PID Off)
     int throttle = 0;                  // Controle manual do motor
     float actualSpeed; // Velocidade atual do motor
     float setpoint;    // Velocidade de objetivo do motor
-    float Kp = 0;   // Parametros de calibração do controlador PID
-    float Ki = 0;
+    float Kp = 1;   // Parametros de calibração do controlador PID
+    float Ki = 0.01;
     float Kd = 0;  
     Motor(unsigned int dirA, unsigned int dirB, unsigned int pwm) : dirAPin(dirA), dirBPin(dirB), pwmPin(pwm){}
     Motor(unsigned int dirA, unsigned int dirB, unsigned int pwm, unsigned int encoder) : dirAPin(dirA), dirBPin(dirB), pwmPin(pwm), encoderPin(encoder){}
@@ -87,7 +88,10 @@ class Motor{
     void setMode(int mode){
         motorMode = mode;
         // Reseta a potencia caso aconteça de colocar no modo manual e o PID comandar alguma potencia ainda
-        throttle = 0;       
+        PIDIntegral = 0;
+        lastUpdateTime = millis();
+        throttle = 0;     
+         
     }
 
     void setKp(float kp){
@@ -108,6 +112,13 @@ class Motor{
 
     void setSetpoint(float speed){
         setpoint = speed;
+        if(speed == 0){
+            PIDIntegral = 0;
+        }
+    }
+
+    float getSpeed(){
+        return actualSpeed;
     }
     
     // Define direção e potência do motor
@@ -128,7 +139,8 @@ class Motor{
 
     void sensorUpdate(){
         float rps = (float)50.f/(millis() - lastEncoderTime);
-        actualSpeed = rps * wheelDiameter * PI;
+        actualSpeed = rps * wheelCircunference;
+        actualSpeed = constrain(actualSpeed, -maxSpeed, maxSpeed);
         lastEncoderTime = millis();
     }
 };
