@@ -11,6 +11,12 @@
 |   os comandos dados pelo algoritmo de navegação do ESP                                |
 +--------------------------------------------------------------------------------------*/
 
+struct waypoint{
+    int16_t x;
+    int16_t y;
+};
+
+
 
 class Navigation{
     private:
@@ -36,13 +42,36 @@ class Navigation{
     int16_t objectiveX = 0; // Posição X do objetivo do veiculo
     int16_t objectiveY = 0; // Posição Y do objetivo do veiculo
     int16_t objectiveZ = 0; // Posição Z do objetivo do veiculo
+    float objectiveHeading = 0; // Heading de objetivo do veiculo
     float pitch = 0;    // Inclinações e direção do veiculo
     float roll = 0;     
     float heading = 0; 
-    
+    const float waypointThreshold = 20.f; // Região na qual um waypoint pode ser dito como atravessado
+    unsigned int actualWaypoint = 0; // Contador do waypoint atual
+    float forward = 0;
+    waypoint waypoints[4];
+    PID headingControl;
+
+    private:
+
+    int getDelta(int head, int setPoint){
+        int diff = ( setPoint - head + 180 ) % 360 - 180;
+        diff = diff < -180 ? diff + 360 : diff;
+        return -diff;
+    }
+
     public:
 
-    void begin(){}
+    void begin(){
+        headingControl.setKp(1.0f);
+        headingControl.setKi(0.03f);
+        headingControl.setKd(0.0f);
+        headingControl.setManualError(true);
+        waypoints[0] = waypoint{820, 0};
+        waypoints[1] = waypoint{820, -730};
+        waypoints[2] = waypoint{-50, -730};
+        waypoints[3] = waypoint{0, 0};
+    }
 
     void update(IMUReading imu, float leftSpeed, float rightSpeed){
         if(updateTimer.CheckTime()){
@@ -55,13 +84,62 @@ class Navigation{
             heading = heading < 0 ? heading + 360 : heading;
             posX += cos(radians(heading)) * forwardSpeed * deltaTime;
             posY += sin(radians(heading)) * forwardSpeed * deltaTime;
-            Serial.print(angularSpeed);
-            Serial.print(" | ");
-            Serial.print(deltaTime);
-            Serial.print(" | ");
-            Serial.println(heading);
+
+            // Checa se a posição atual é proxima o bastante do waypoint
+            if(distance(waypoints[actualWaypoint].x, waypoints[actualWaypoint].y) < waypointThreshold){
+                actualWaypoint++;
+                if(actualWaypoint >= 4){
+                    actualWaypoint = 0;
+                }
+            }
+            float waypointHeading = degrees(atan2((waypoints[actualWaypoint].y - posY), (waypoints[actualWaypoint].x - posX )));
+            
+            waypointHeading = waypointHeading >= 360 ? waypointHeading - 360 : waypointHeading;
+            waypointHeading = waypointHeading < 0 ? waypointHeading + 360 : waypointHeading;
+            // Calculo de erro de mira
+            // Algoritmo de Mandelli
+            float headingError = getDelta(heading, (int)waypointHeading);
+            Serial.println(headingError);
+            headingControl.setSetpoint((int)waypointHeading);
+            headingControl.setError(headingError);
+            headingControl.update();
+
+            
             lastTime = millis();
         }
+    }
+
+    // Subrotinas internas
+    private:
+    // Retorna a distancia do robo a um ponto (x,y)
+    float distance(int x, int y){
+        return sqrt(sq(posX - x) + sq(posY - y));
+    }
+
+    // Métodos externos
+    public:
+    void setHeading(float value){
+        headingControl.setSetpoint(value);
+    }   
+
+    float getSpeedLeft(){
+        return -headingControl.getOutput() + forward;
+    }
+
+    float getSpeedRight(){
+        return headingControl.getOutput() + forward;
+    }
+
+    float getDistance(){
+        return distance(waypoints[actualWaypoint].x, waypoints[actualWaypoint].y);
+    }
+
+    float getObjectiveHeading(){
+        return headingControl.getSetpoint();
+    }
+
+    void goForward(float speed){
+        forward = speed;
     }
 
     int16_t getPosX(){
@@ -76,8 +154,20 @@ class Navigation{
         return posZ;
     }
 
+    int getDestinationX(){
+        return waypoints[actualWaypoint].x;
+    }
+
+    int getDestinationY(){
+        return waypoints[actualWaypoint].y;
+    }
+
     float getHeading(){
         return heading;
+    }
+
+    unsigned int getWaypoint(){
+        return actualWaypoint;
     }
 
     void reset(){
@@ -85,5 +175,7 @@ class Navigation{
         posY = 0;
         posZ = 0;
         heading = 0;
+        headingControl.resetIntegral();
+        actualWaypoint = 0;
     }
 };

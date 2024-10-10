@@ -34,20 +34,20 @@ void updateCarData(){
     carData.ultrassound_reading_back_left = sensors.getUltrassoundDistance(5);
     carData.ultrassound_reading_back = sensors.getUltrassoundDistance(6);
     carData.ultrassound_reading_back_right = sensors.getUltrassoundDistance(7);
-    carData.motor_left_mode = leftMotor.motorMode;
-    carData.motor_left_setpoint = leftMotor.setpoint * FLOAT_MULTIPLIER;
-    carData.motor_left_speed = leftMotor.actualSpeed * FLOAT_MULTIPLIER;
-    carData.motor_left_throttle = leftMotor.throttle;
-    carData.motor_left_kp = leftMotor.Kp * FLOAT_MULTIPLIER;
-    carData.motor_left_ki = leftMotor.Ki * FLOAT_MULTIPLIER;
-    carData.motor_left_kd = leftMotor.Kd * FLOAT_MULTIPLIER;
-    carData.motor_right_mode = rightMotor.motorMode;
-    carData.motor_right_setpoint = rightMotor.setpoint * FLOAT_MULTIPLIER;
-    carData.motor_right_speed = rightMotor.actualSpeed * FLOAT_MULTIPLIER;
-    carData.motor_right_throttle = rightMotor.throttle;
-    carData.motor_right_kp = rightMotor.Kp * FLOAT_MULTIPLIER;
-    carData.motor_right_ki = rightMotor.Ki * FLOAT_MULTIPLIER;
-    carData.motor_right_kd = rightMotor.Kd * FLOAT_MULTIPLIER;
+    carData.motor_left_mode = leftMotor.getMode();
+    carData.motor_left_setpoint = leftMotor.getSetpoint() * FLOAT_MULTIPLIER;
+    carData.motor_left_speed = leftMotor.getSpeed() * FLOAT_MULTIPLIER;
+    carData.motor_left_throttle = leftMotor.getThrottle();
+    carData.motor_left_kp = leftMotor.getKp() * FLOAT_MULTIPLIER;
+    carData.motor_left_ki = leftMotor.getKi() * FLOAT_MULTIPLIER;
+    carData.motor_left_kd = leftMotor.getKd() * FLOAT_MULTIPLIER;
+    carData.motor_right_mode = rightMotor.getMode();
+    carData.motor_right_setpoint = rightMotor.getSetpoint() * FLOAT_MULTIPLIER;
+    carData.motor_right_speed = rightMotor.getSpeed() * FLOAT_MULTIPLIER;
+    carData.motor_right_throttle = rightMotor.getThrottle();
+    carData.motor_right_kp = rightMotor.getKp() * FLOAT_MULTIPLIER;
+    carData.motor_right_ki = rightMotor.getKi() * FLOAT_MULTIPLIER;
+    carData.motor_right_kd = rightMotor.getKd() * FLOAT_MULTIPLIER;
     carData.gyro_raw_x = sensors.getIMUReading().rawGyroX;
     carData.gyro_raw_y = sensors.getIMUReading().rawGyroY;
     carData.gyro_raw_z = sensors.getIMUReading().rawGyroZ;
@@ -73,13 +73,13 @@ void updateCarData(){
     carData.navigation_mode = navMode;
     carData.navigation_position_x = navigation.getPosX();
     carData.navigation_position_y = navigation.getPosY();
-    carData.navigation_position_z = navigation.getPosZ();
+    carData.navigation_position_z = navigation.getObjectiveHeading();
     carData.navigation_position_pitch = 0; //sensors.getIMUReading().pitch * FLOAT_MULTIPLIER;
     carData.navigation_position_roll = 0; //sensors.getIMUReading().roll * FLOAT_MULTIPLIER;
     carData.navigation_position_heading = navigation.getHeading() * FLOAT_MULTIPLIER; //sensors.getIMUReading().heading * FLOAT_MULTIPLIER;
-    carData.navigation_destination_x = 0;
-    carData.navigation_destination_y = 0;
-    carData.navigation_destination_z = 0;
+    carData.navigation_destination_x = navigation.getDestinationX();
+    carData.navigation_destination_y = navigation.getDestinationY();
+    carData.navigation_destination_z = navigation.getDistance();;
     carData.navigation_home_x = 0;
     carData.navigation_home_y = 0;
     carData.navigation_home_z = 0;
@@ -104,6 +104,7 @@ void setup() {
     sensors.addUltrassound(PIN_ULTRASSOUND_BACK_TRIGGER, PIN_ULTRASSOUND_BACK_ECHO, ultrassoundUpdateTime);
     sensors.addUltrassound(PIN_ULTRASSOUND_BACK_RIGHT_TRIGGER, PIN_ULTRASSOUND_BACK_RIGHT_ECHO, ultrassoundUpdateTime);
     sensors.addInertialUnit();
+    navigation.begin();
     leftMotor.begin();
     rightMotor.begin();
     attachInterrupt(digitalPinToInterrupt(PIN_MOTOR_LEFT_ENCODER), leftEncoder, RISING);
@@ -114,17 +115,14 @@ void setup() {
 }
 void loop() {
     sensors.update();
+    leftMotor.setSetpoint(navigation.getSpeedLeft());
+    rightMotor.setSetpoint(navigation.getSpeedRight());
     leftMotor.update();
     rightMotor.update();
     navigation.update(sensors.getIMUReading(), leftMotor.getSpeed(), rightMotor.getSpeed());
     buzzer.update();
     updateCarData();
     sendData(&carData);
-    if(walkFlag && navigation.getPosX() > 300){
-        leftMotor.setMode(1);
-        rightMotor.setMode(1);
-        walkFlag = false;
-    }
     // Se um comando foi recebido
     if(receiveData(&command) == GOOD_PACKET){
         
@@ -188,9 +186,14 @@ void loop() {
                 leftMotor.setMode(0);
                 rightMotor.setMode(0);
                 navigation.reset();
-                leftMotor.setSetpoint(80);
-                rightMotor.setSetpoint(80);
-                walkFlag = true;
+                if(!walkFlag){
+                    navigation.goForward(100);
+                    walkFlag = true;
+                } else {
+                    navigation.goForward(0);
+                }
+                
+                
                 break;
             default:
                 break;

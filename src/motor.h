@@ -1,7 +1,7 @@
 #pragma once
 #include <Arduino.h>
 #include "timer.h"
-
+#include "PID.h"
 /*-------------------------------------------------------------------+
 |    Classe de motor - Marco Aurélio (08/09/2024)                    |
 |                                                                    |
@@ -19,7 +19,7 @@ class Motor{
     unsigned int encoderPin = 50; // Pino do encoder rotativo
 
     // Parametros caso queira controlar o motor com PID (espero que meu sofrimento valha a pena)
-    float PIDIntegral; // Integral usada no controlador PID
+    PID pid;
     float lastSpeed;   // Ultimo valor lido, usado no calculo da derivada no controlador PID
     unsigned long lastUpdateTime = 0; // Momento do ultimo loop do PID
 
@@ -33,20 +33,20 @@ class Motor{
     public:
     unsigned int motorMode = 0;    // Modo do motor (0 = PID ON | 1 = PID Off)
     int throttle = 0;                  // Controle manual do motor
-    float actualSpeed; // Velocidade atual do motor
-    float setpoint;    // Velocidade de objetivo do motor
-    float Kp = 1;   // Parametros de calibração do controlador PID
-    float Ki = 0.01;
-    float Kd = 0;  
+    
+
     Motor(unsigned int dirA, unsigned int dirB, unsigned int pwm) : dirAPin(dirA), dirBPin(dirB), pwmPin(pwm){}
     Motor(unsigned int dirA, unsigned int dirB, unsigned int pwm, unsigned int encoder) : dirAPin(dirA), dirBPin(dirB), pwmPin(pwm), encoderPin(encoder){}
-
+    
     // Inicializador do motor
     void begin(){
         pinMode(dirAPin, OUTPUT);
         pinMode(dirBPin, OUTPUT);
         pinMode(pwmPin, OUTPUT);
         pinMode(encoderPin, INPUT);
+        pid.setKp(1.0f);
+        pid.setKp(0.01f);
+        pid.setKp(0.0f);
     }
     
     // Atualiza coisas do motor como PID, velocidade, entre outros
@@ -54,71 +54,79 @@ class Motor{
     void update(){
         if(!motorMode){
             if(updateTimer.CheckTime()){
-                float error = setpoint - actualSpeed;
-                float PIDderivative = (actualSpeed - lastSpeed) * (millis() - lastUpdateTime);
-                PIDIntegral += error * (millis() - lastUpdateTime);
-
-                float proportional = Kp * error;
-                float integral = Ki * PIDIntegral;
-                float derivative = Kd * PIDderivative;
-
-                throttle = (int)(proportional + integral + derivative);
-
-                lastUpdateTime = millis();
-
-                #ifdef DEBUG
-                Serial.print("Actual Speed: ");
-                Serial.print(actualSpeed);
-                Serial.print(" Throttle: ");
-                Serial.println(throttle);
-                #endif
+                pid.update();
             }
         }
-        setSpeed(throttle);
+        setSpeed((int)pid.getOutput());
         if(millis() - lastEncoderTime > timeout){
-            actualSpeed = 0;
+            pid.setActualValue(0);
         }
         
     }
 
     void setThrottle(int t){
-        throttle = t;
+        pid.setActualValue(t);
     }
 
     void setMode(int mode){
         motorMode = mode;
         // Reseta a potencia caso aconteça de colocar no modo manual e o PID comandar alguma potencia ainda
-        PIDIntegral = 0;
-        lastUpdateTime = millis();
-        throttle = 0;     
+        pid.resetIntegral();
+        pid.resetLastUpdate();
+        pid.setActualValue(0);  
          
     }
 
     void setKp(float kp){
-        Kp = kp;
+        pid.setKp(kp);
     }
 
     void setKi(float ki){
-        Ki = ki;
+        pid.setKi(ki);
     }
 
     void setKd(float kd){
-        Kd = kd;
+        pid.setKd(kd);
     }
 
+   float getKp(){
+        return pid.getKp();
+   }
+
+   float getKi(){
+        return pid.getKi();
+   }
+
+   float getKd(){
+        return pid.getKd();
+   }
+
+   float getSetpoint(){
+        return pid.getSetpoint();
+   }
+
+   float getSpeed(){
+        return pid.getActualValue();
+   }
+
+   int getThrottle(){
+        return (int)pid.getOutput();
+   }
+
+   unsigned int getMode(){
+        return motorMode;
+   }
+    
+
     void resetIntegral(){
-        PIDIntegral = 0;
+        pid.resetIntegral();
     }
 
     void setSetpoint(float speed){
-        setpoint = speed;
+        pid.setSetpoint(speed);
         if(speed == 0){
-            PIDIntegral = 0;
+            pid.resetIntegral();
         }
-    }
-
-    float getSpeed(){
-        return actualSpeed;
     }
     
     // Define direção e potência do motor
@@ -139,8 +147,7 @@ class Motor{
 
     void sensorUpdate(){
         float rps = (float)50.f/(millis() - lastEncoderTime);
-        actualSpeed = rps * wheelCircunference;
-        actualSpeed = constrain(actualSpeed, -maxSpeed, maxSpeed);
+        pid.setActualValue(constrain(rps * wheelCircunference, -maxSpeed, maxSpeed));
         lastEncoderTime = millis();
     }
 };
