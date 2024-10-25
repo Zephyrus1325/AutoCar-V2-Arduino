@@ -49,7 +49,8 @@ class Navigation{
     const float waypointThreshold = 20.f; // Região na qual um waypoint pode ser dito como atravessado
     unsigned int actualWaypoint = 0; // Contador do waypoint atual
     float forward = 0;
-    waypoint waypoints[4];
+    int mode = 0; // Modo do Sistema de Navegação | 0 - Automatico  | 1 - Manual
+    waypoint waypoints[7];
     PID headingControl;
 
     private:
@@ -63,13 +64,15 @@ class Navigation{
     public:
 
     void begin(){
-        headingControl.setKp(1.0f);
-        headingControl.setKi(0.03f);
+        headingControl.setKp(0.8f);
+        headingControl.setKi(0.01f);
         headingControl.setKd(0.0f);
         headingControl.setManualError(true);
-        waypoints[0] = waypoint{820, 0};
-        waypoints[1] = waypoint{820, -730};
-        waypoints[2] = waypoint{-50, -730};
+        headingControl.update();
+        reset();
+        waypoints[0] = waypoint{150, 0};
+        waypoints[1] = waypoint{150, 150};
+        waypoints[2] = waypoint{0, 150};
         waypoints[3] = waypoint{0, 0};
     }
 
@@ -80,10 +83,10 @@ class Navigation{
             forwardSpeed = (rightSpeed + leftSpeed)/2.0f;
             angularSpeed = imu.gyroZ;
             heading += angularSpeed * deltaTime;
-            heading = heading >= 360 ? heading - 360 : heading;
-            heading = heading < 0 ? heading + 360 : heading;
-            posX += cos(radians(heading)) * forwardSpeed * deltaTime;
-            posY += sin(radians(heading)) * forwardSpeed * deltaTime;
+            heading = heading >= 359 ? heading - 359 : heading;
+            heading = heading < 0 ? heading + 359 : heading;
+            posX += sin(radians(heading)) * forwardSpeed * deltaTime;
+            posY += cos(radians(heading)) * forwardSpeed * deltaTime;
 
             // Checa se a posição atual é proxima o bastante do waypoint
             if(distance(waypoints[actualWaypoint].x, waypoints[actualWaypoint].y) < waypointThreshold){
@@ -96,10 +99,9 @@ class Navigation{
             
             waypointHeading = waypointHeading >= 360 ? waypointHeading - 360 : waypointHeading;
             waypointHeading = waypointHeading < 0 ? waypointHeading + 360 : waypointHeading;
+            
             // Calculo de erro de mira
-            // Algoritmo de Mandelli
             float headingError = getDelta(heading, (int)waypointHeading);
-            Serial.println(headingError);
             headingControl.setSetpoint((int)waypointHeading);
             headingControl.setError(headingError);
             headingControl.update();
@@ -121,6 +123,10 @@ class Navigation{
     void setHeading(float value){
         headingControl.setSetpoint(value);
     }   
+
+    void setMode(int newMode){
+        mode = newMode;
+    }
 
     float getSpeedLeft(){
         return -headingControl.getOutput() + forward;
