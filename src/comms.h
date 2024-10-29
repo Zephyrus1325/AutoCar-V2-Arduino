@@ -5,7 +5,7 @@
 #include "StreamSend.h"
 
 // Descomente essa linha para habilitar debug de tudo
-//#define DEBUG
+#define DEBUG
 
 struct CarData{
     int32_t battery_voltage;                    // Float
@@ -107,8 +107,14 @@ byte receiveData(Command* command){
             Serial.print(" } Size: ");
             Serial.println((int)sizeof(*command));
         } else if(packetStatus == BAD_PACKET){
-            Serial.println("Bad Packet: Size: ");
-            Serial.println((int)sizeof(*command));
+            Serial.print("Bad Packet: Size: ");
+            Serial.print((int)sizeof(*command));
+            Serial.print(" Struct Size:");
+            Serial.println((int)sizeof(Command));
         }
     #endif
 }
+
+#ifdef DEBUG
+#undef DEBUG
+#endif

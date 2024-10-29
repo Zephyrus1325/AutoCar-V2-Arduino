@@ -77,3 +77,6 @@ class Buzzer{
     }
 };
 
+#ifdef DEBUG
+#undef DEBUG
+#endif

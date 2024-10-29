@@ -95,6 +95,8 @@ void rightEncoder(){
 
 
 void setup() {
+    Serial.begin(115200);
+    Serial2.begin(115200);
     sensors.addUltrassound(PIN_ULTRASSOUND_FRONT_TRIGGER, PIN_ULTRASSOUND_FRONT_ECHO, ultrassoundUpdateTime);
     sensors.addUltrassound(PIN_ULTRASSOUND_FRONT_LEFT_TRIGGER, PIN_ULTRASSOUND_FRONT_LEFT_ECHO, ultrassoundUpdateTime);
     sensors.addUltrassound(PIN_ULTRASSOUND_FRONT_RIGHT_TRIGGER, PIN_ULTRASSOUND_FRONT_RIGHT_ECHO, ultrassoundUpdateTime);
@@ -103,15 +105,17 @@ void setup() {
     sensors.addUltrassound(PIN_ULTRASSOUND_BACK_LEFT_TRIGGER, PIN_ULTRASSOUND_BACK_LEFT_ECHO, ultrassoundUpdateTime);
     sensors.addUltrassound(PIN_ULTRASSOUND_BACK_TRIGGER, PIN_ULTRASSOUND_BACK_ECHO, ultrassoundUpdateTime);
     sensors.addUltrassound(PIN_ULTRASSOUND_BACK_RIGHT_TRIGGER, PIN_ULTRASSOUND_BACK_RIGHT_ECHO, ultrassoundUpdateTime);
+    Serial.print("Calibrating Inertial Unit...");
     sensors.addInertialUnit();
-    navigation.begin();
+    delay(300);
+    sensors.update();
+    Serial.println("\nInertial Unit OK!");
+    navigation.begin(sensors.getIMUReading());
     leftMotor.begin();
     rightMotor.begin();
     attachInterrupt(digitalPinToInterrupt(PIN_MOTOR_LEFT_ENCODER), leftEncoder, RISING);
     attachInterrupt(digitalPinToInterrupt(PIN_MOTOR_RIGHT_ENCODER), rightEncoder, RISING);
     buzzer.begin();
-    Serial.begin(115200);
-    Serial2.begin(115200);
 }
 void loop() {
     sensors.update();
@@ -185,7 +189,7 @@ void loop() {
             case COMMAND_TEMP_3_METERS:
                 leftMotor.setMode(0);
                 rightMotor.setMode(0);
-                navigation.reset();
+                navigation.reset(sensors.getIMUReading());
                 if(!walkFlag){
                     navigation.goForward(100);
                     walkFlag = true;

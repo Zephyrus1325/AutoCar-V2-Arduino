@@ -11,6 +11,8 @@
 |   os comandos dados pelo algoritmo de navegação do ESP                                |
 +--------------------------------------------------------------------------------------*/
 
+//#define DEBUG
+
 struct waypoint{
     int16_t x;
     int16_t y;
@@ -63,16 +65,16 @@ class Navigation{
 
     public:
 
-    void begin(){
+    void begin(IMUReading imu){
         headingControl.setKp(0.8f);
         headingControl.setKi(0.01f);
         headingControl.setKd(0.0f);
         headingControl.setManualError(true);
         headingControl.update();
-        reset();
-        waypoints[0] = waypoint{150, 0};
+        reset(imu);
+        waypoints[0] = waypoint{0, 150};
         waypoints[1] = waypoint{150, 150};
-        waypoints[2] = waypoint{0, 150};
+        waypoints[2] = waypoint{150, 0};
         waypoints[3] = waypoint{0, 0};
     }
 
@@ -83,6 +85,7 @@ class Navigation{
             forwardSpeed = (rightSpeed + leftSpeed)/2.0f;
             angularSpeed = imu.gyroZ;
             heading += angularSpeed * deltaTime;
+            heading += getDelta(imu.magHeading, heading) * 0.005f;
             heading = heading >= 359 ? heading - 359 : heading;
             heading = heading < 0 ? heading + 359 : heading;
             posX += sin(radians(heading)) * forwardSpeed * deltaTime;
@@ -95,7 +98,7 @@ class Navigation{
                     actualWaypoint = 0;
                 }
             }
-            float waypointHeading = degrees(atan2((waypoints[actualWaypoint].y - posY), (waypoints[actualWaypoint].x - posX )));
+            float waypointHeading = degrees(atan2((waypoints[actualWaypoint].x - posX ), (waypoints[actualWaypoint].y - posY)));
             
             waypointHeading = waypointHeading >= 360 ? waypointHeading - 360 : waypointHeading;
             waypointHeading = waypointHeading < 0 ? waypointHeading + 360 : waypointHeading;
@@ -106,7 +109,28 @@ class Navigation{
             headingControl.setError(headingError);
             headingControl.update();
 
-            
+            #ifdef DEBUG
+                Serial.print("X: ");
+                Serial.print(posX);
+                Serial.print(" Y: ");
+                Serial.print(posY);
+                Serial.print(" H: ");
+                Serial.print(heading);
+                Serial.print(" destX: ");
+                Serial.print(waypoints[actualWaypoint].x);
+                Serial.print(" destY: ");
+                Serial.print(waypoints[actualWaypoint].y);
+                Serial.print(" Dist: ");
+                Serial.print(distance(waypoints[actualWaypoint].x, waypoints[actualWaypoint].y));
+                Serial.print(" setHeading: ");
+                Serial.print(waypointHeading);
+                Serial.print(" deltaHeading: ");
+                Serial.print(getDelta(heading, waypointHeading));
+                Serial.print(" magH: ");
+                Serial.print(imu.magHeading);
+                Serial.print(" deltaMag: ");
+                Serial.println(getDelta(imu.magHeading, heading));
+            #endif
             lastTime = millis();
         }
     }
@@ -176,12 +200,16 @@ class Navigation{
         return actualWaypoint;
     }
 
-    void reset(){
+    void reset(IMUReading imu){
         posX = 0;
         posY = 0;
         posZ = 0;
-        heading = 0;
+        heading = imu.magHeading;
         headingControl.resetIntegral();
         actualWaypoint = 0;
     }
 };
+
+#ifdef DEBUG
+#undef DEBUG
+#endif

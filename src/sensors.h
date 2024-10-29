@@ -7,7 +7,7 @@
 #include <Arduino.h>
 #include "timer.h"
 #include "MPU6050.h"
-#include "HMC5883L.h"
+#include "QMC5883LCompass.h"
 #include "BMP180.h"
 
 /*------------------------------------------------------------+
@@ -33,7 +33,8 @@ class Ultrassound : public Sensor {
     float distance;                     // Distancia lida pelo Sensor Ultrassonico em cm
     unsigned int triggerPin;      // Pino Trigger do Sensor
     unsigned int echoPin;         // Pino Echo do Sensor
-    unsigned long maxTime = 5882;       // Tempo máximo que vai se esperar pelo echo do sensor em microssegundos
+    //unsigned long maxTime = 5882;       // Tempo máximo que vai se esperar pelo echo do sensor em microssegundos
+    unsigned long maxTime = 12000;
     unsigned long sentTime = 0;
     bool waiting = false;
     timer updateTimer = {0, 100, true, true, true};
@@ -163,6 +164,9 @@ struct IMUReading {
         float magZ;  // Gauss ...?
         float pressure;
         float temperature;
+        float magHeading; // Graus
+        float accPitch;   // Graus
+        float accRoll;    // Graus
     };
 
 
@@ -170,7 +174,7 @@ struct IMUReading {
 class InertialUnit : public Sensor{
     private:
     MPU6050 mpu;
-    HMC5883L mag;
+    QMC5883LCompass mag;
     BMP180 baro;
     timer updateTimer{0,0,100,true,true};
     float magHeading = 0;      // Heading Calculado pelo magnetometro
@@ -182,6 +186,9 @@ class InertialUnit : public Sensor{
 
     IMUReading reading;
     InertialUnit(){};
+    InertialUnit& operator=(const InertialUnit& other){
+        return *this;
+    }
 
     void begin(){
         Wire.begin();
@@ -204,14 +211,15 @@ class InertialUnit : public Sensor{
         mpu.initialize();
         mpu.CalibrateAccel();
         mpu.CalibrateGyro();
-        mag.initialize();
+        mag.init();
+        mag.setMagneticDeclination(-23, 53);
+        mag.setCalibrationOffsets(-2190, -650, 361);
+        mag.setCalibrationScales(1.0, 1.10, 1);
         baro.begin();
-        mag.setMode(HMC5883L_MODE_CONTINUOUS);
-        mag.setDataRate(HMC5883L_RATE_15);
         #ifdef DEBUG
-            Serial.println(F("Testing I2C connections..."));
+            Serial.println(F("\nTesting I2C connections..."));
             Serial.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
-            Serial.println(mag.testConnection() ? F("HMC5883L connection successful") : F("HMC5883L connection failed"));
+            //Serial.println(mag.testConnection() ? F("HMC5883L connection successful") : F("HMC5883L connection failed"));
             //Serial.println(baro.testConnection() ? F("BMP085 connection successful") : F("BMP085 connection failed"));
         #endif
     }
@@ -219,7 +227,11 @@ class InertialUnit : public Sensor{
     void update(){
         if(updateTimer.CheckTime()){
             mpu.getMotion6(&reading.rawAccelX, &reading.rawAccelY, &reading.rawAccelZ, &reading.rawGyroX, &reading.rawGyroY, &reading.rawGyroZ);
-            mag.getHeading(&reading.rawMagX, &reading.rawMagY, &reading.rawMagZ);
+            mag.read();
+            reading.rawMagX = mag.getX();
+            reading.rawMagY = mag.getY();
+            reading.rawMagZ = mag.getZ();
+
             reading.pressure = baro.getPressure();
             reading.temperature = baro.getTemperature();
             
@@ -232,11 +244,21 @@ class InertialUnit : public Sensor{
             reading.gyroZ = (float) (reading.rawGyroZ * 250.0f) / (pow(2,15));
             
             // Leitura e calculo dos valores relativos ao referencial absoluto
-            float magHeading = atan2(reading.rawMagY, reading.rawMagX) * 180.0f / PI;
-            float accPitch = (atan2(reading.accelY, sqrt(pow(reading.accelX, 2) + pow(reading.accelZ, 2))) * 180.0f / PI);
-            float accRoll = (atan2(-reading.accelX, sqrt(pow(reading.accelY, 2) + pow(reading.accelZ, 2))) * 180.0f / PI);
             
-
+            reading.magHeading = mag.getAzimuth();
+            reading.accPitch = (atan2(reading.accelY, sqrt(pow(reading.accelX, 2) + pow(reading.accelZ, 2))) * 180.0f / PI);
+            reading.accRoll = (atan2(-reading.accelX, sqrt(pow(reading.accelY, 2) + pow(reading.accelZ, 2))) * 180.0f / PI);
+            
+            #ifdef DEBUG
+                //Serial.print("RawMagX: ");
+                //Serial.print(reading.rawMagX);
+                //Serial.print(" RawMagY: ");
+                //Serial.print(", ");
+                //Serial.print(reading.rawMagY);
+                //Serial.print("\n");
+                //Serial.print(" MagHeading: ");
+                //Serial.println(reading.magHeading);
+            #endif
             // Caralho eu não sei como fazer essa conta
             // Atual = Atual + variação confiavel * 0.99 + Variação consistente * 0.01
             //reading.pitch = reading.gyroX * (1-mixMultiplier) + accPitch * mixMultiplier;
@@ -246,3 +268,8 @@ class InertialUnit : public Sensor{
     }
 
 };
+
+
+#ifdef DEBUG
+#undef DEBUG
+#endif
